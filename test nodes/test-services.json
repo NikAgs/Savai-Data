@@ -1,0 +1,20 @@
+[{
+  "type": "add",
+  "id": "test",
+  "fields": {
+      "name": "",
+      "description": "",
+      "price": 0,
+      "price_plus": "false",
+      "discounted_price": 0,
+      "business": "",
+      "address": "",
+      "geolocation": "0.0, 0.0",
+      "phone": "",
+      "service_category": "",
+      "micro_category": "",
+      "macro_category": "",
+      "profile_url": "",
+      "hours": ""
+  }
+}]

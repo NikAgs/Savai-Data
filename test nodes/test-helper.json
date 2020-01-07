@@ -1,0 +1,8 @@
+[
+ {"type": "add",
+  "id":   "test-node",
+  "fields": {
+    "name": "Tester"
+  }
+ }
+]

@@ -1,0 +1,18 @@
+{
+  "name": "savaidata",
+  "version": "1.0.0",
+  "description": "A simple data analyzer tool for Savai data",
+  "main": "savai_parser.js",
+  "scripts": {
+    "test": "npm test"
+  },
+  "author": "Nik Agarwal",
+  "license": "ISC",
+  "dependencies": {
+    "jshint": "^2.10.2",
+    "node-geocoder": "^3.23.0",
+    "papaparse": "^5.0.0",
+    "uuid": "^3.3.2",
+    "aws-sdk": "^2.505.0"
+  }
+}

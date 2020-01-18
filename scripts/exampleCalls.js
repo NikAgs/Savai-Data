@@ -1,5 +1,5 @@
 var AWS = require('aws-sdk');
-AWS.config.loadFromPath('credentials.json');
+AWS.config.loadFromPath('../credentials.json');
 
 const SEARCH_HELPER_DOMAIN = "search-helpers-rwq52jv2pag6js3cozrlqwxkry.us-east-1.cloudsearch.amazonaws.com";
 const SERVICE_DOMAIN = "search-services-dvsyeourhhah4hhenkpm2baqoa.us-east-1.cloudsearch.amazonaws.com";

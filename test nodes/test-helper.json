@@ -1,8 +1,20 @@
 [
- {"type": "add",
-  "id":   "test-node",
+  {
+    "type": "add",
+    "id": "test",
+    "fields": {
+        "type": "yes",
+        "type_order": 0,
+        "name": "yes"
+    }
+},
+ {
+  "type": "add",
+  "id": "test",
   "fields": {
-    "name": "Tester"
+      "type": "no",
+      "type_order": 0,
+      "name": "no"
   }
- }
+}
 ]

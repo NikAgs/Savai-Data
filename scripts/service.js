@@ -15,7 +15,7 @@ const BUSINESS_NAMESPACE = "8cc2e530-334e-11ea-abd4-c5adc7570807";
 const SERVICE_DOMAIN = "search-services-dvsyeourhhah4hhenkpm2baqoa.us-east-1.cloudsearch.amazonaws.com";
 
 // Change this to the database size
-const DATABASE_SIZE = 3108;
+const DATABASE_SIZE = 3035;
 
 function addNodes() {
     papa.parse(stream, {
@@ -26,7 +26,7 @@ function addNodes() {
                     "type": "add",
                     "id": "",
                     "fields": {
-                        "businessID": "",
+                        "business_id": "",
                         "name": "",
                         "description": "",
                         "price": 0.0,

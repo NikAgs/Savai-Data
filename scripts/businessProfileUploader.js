@@ -32,35 +32,35 @@ papa.parse(stream, {
                 };
 
                 if (cur25[1].Business.length > 0 && cur25[1].Address.length > 0) {
-                    this_item.PutRequest.Item.Business = {
+                    this_item.PutRequest.Item.business = {
                         "S": cur25[i].Business.trim()
                     };
-                    this_item.PutRequest.Item.Address = {
+                    this_item.PutRequest.Item.address = {
                         "S": cur25[i].Address.trim()
                     };
-                    this_item.PutRequest.Item.id = {
+                    this_item.PutRequest.Item.business_id = {
                         "S": uuidv3(cur25[i].Business.trim() + "|||" + cur25[i].Address.trim(), NAMESPACE)
                     };
                 } else {
                     continue;
                 }
 
-                if (cur25[i]["Phone Number"].length > 0) this_item.PutRequest.Item["Phone Number"] = {
+                if (cur25[i]["Phone Number"].trim().length > 0) this_item.PutRequest.Item.phone_number = {
                     "S": cur25[i]["Phone Number"].trim()
                 };
-                if (cur25[i]["Service Pricing Tracker"].length > 0) this_item.PutRequest.Item["Service Pricing Tracker"] = {
+                if (cur25[i]["Service Pricing Tracker"].trim().length > 0) this_item.PutRequest.Item.price_tracker = {
                     "S": cur25[i]["Service Pricing Tracker"].trim()
                 };
-                if (cur25[1].Photo.length > 0) this_item.PutRequest.Item.Photo = {
+                if (cur25[i].Photo.trim().length > 0) this_item.PutRequest.Item.photo = {
                     "S": cur25[i].Photo.trim()
                 };
-                if (cur25[i].Notes.trim().length > 0) this_item.PutRequest.Item.Notes = {
-                    "S": cur25[i].Notes.trim() || " "
+                if (cur25[i].Notes.trim().length > 0) this_item.PutRequest.Item.notes = {
+                    "S": cur25[i].Notes.trim()
                 };
-                if (cur25[1].District.length > 0) this_item.PutRequest.Item.District = {
+                if (cur25[i].District.trim().length > 0) this_item.PutRequest.Item.district = {
                     "S": cur25[i].District.trim()
                 };
-                if (cur25[1].Hours.length > 0) this_item.PutRequest.Item.Hours = {
+                if (cur25[i].Hours.trim().length > 0) this_item.PutRequest.Item.hours = {
                     "S": cur25[i].Hours.trim()
                 };
 

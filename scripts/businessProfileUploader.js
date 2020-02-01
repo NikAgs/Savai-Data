@@ -8,14 +8,20 @@ var stream = fs.createReadStream("../data/business-data.csv");
 var AWS = require('aws-sdk');
 AWS.config.loadFromPath('../credentials.json');
 
+var service_nodes = JSON.parse(fs.readFileSync('../output/service-nodes.json', 'utf8'));
+
 const dynamodbDocClient = new AWS.DynamoDB({
     region: "us-west-1"
 });
 
 const NAMESPACE = "8cc2e530-334e-11ea-abd4-c5adc7570807";
+const BUCKET_NAME = 'savai-business-images';
 
+/*
+ * MUST HAVE UPDATED service-nodes.json IN OUTPUT BEFORE RUNNING!!
+ */
 papa.parse(stream, {
-    complete: function (results) {
+    complete: async function (results) {
         var data = results.data;
         var split_arrays = [];
         var size = 25;
@@ -31,7 +37,7 @@ papa.parse(stream, {
                     }
                 };
 
-                if (cur25[1].Business.length > 0 && cur25[1].Address.length > 0) {
+                if (cur25[i].Business.length > 0 && cur25[i].Address.length > 0) {
                     this_item.PutRequest.Item.business = {
                         "S": cur25[i].Business.trim()
                     };
@@ -63,6 +69,29 @@ papa.parse(stream, {
                 if (cur25[i].Hours.trim().length > 0) this_item.PutRequest.Item.hours = {
                     "S": cur25[i].Hours.trim()
                 };
+
+                // Add services from this business as a JSON array
+                var services = [];
+                for (var j = 0; j < service_nodes.length; j++) {
+                    if (service_nodes[j].fields.business_id == uuidv3(cur25[i].Business.trim() + "|||" + cur25[i].Address.trim(), NAMESPACE)) {
+                        services.push(service_nodes[j].fields);
+                    }
+                }
+                this_item.PutRequest.Item.services = {
+                    "S": JSON.stringify(services)
+                };
+
+                // Add photo URLs if they exist in S3
+                try {
+                    await new AWS.S3().headObject({
+                        Bucket: BUCKET_NAME,
+                        Key: uuidv3(cur25[i].Business.trim() + "|||" + cur25[i].Address.trim(), NAMESPACE) + "-1"
+                    }).promise();
+
+                    this_item.PutRequest.Item.photos = {
+                        "S": JSON.stringify(["https://savai-business-images.s3-us-west-1.amazonaws.com/" + uuidv3(cur25[i].Business.trim() + "|||" + cur25[i].Address.trim(), NAMESPACE) + "-1"])
+                    };
+                } catch (err) {}
 
                 //console.log(JSON.stringify(this_item));
                 item_data.push(this_item);

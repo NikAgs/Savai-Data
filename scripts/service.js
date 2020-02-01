@@ -12,7 +12,8 @@ var categoryMap = JSON.parse(fs.readFileSync('../output/categoryMap.json', 'utf8
 
 const SERVICE_NAMESPACE = "24592ec9-3d6d-4f76-8163-c0d41b50faea";
 const BUSINESS_NAMESPACE = "8cc2e530-334e-11ea-abd4-c5adc7570807";
-const SERVICE_DOMAIN = "search-services-dvsyeourhhah4hhenkpm2baqoa.us-east-1.cloudsearch.amazonaws.com";
+const SERVICE_DOMAIN = "search-services-cvfpbrz6fmcwfwrssmlmvfr7fu.us-west-1.cloudsearch.amazonaws.com";
+const DOCUMENT_DOMAIN = "doc-services-cvfpbrz6fmcwfwrssmlmvfr7fu.us-west-1.cloudsearch.amazonaws.com";
 
 // Change this to the database size
 const DATABASE_SIZE = 3035;
@@ -38,7 +39,14 @@ function addNodes() {
                         "phone": "",
                         "service_category": "",
                         "macro_category": "",
-                        "hours": ""
+                        "hours_text": "",
+                        "monday_hours": [],
+                        "tuesday_hours": [],
+                        "wednesday_hours": [],
+                        "thursday_hours": [],
+                        "friday_hours": [],
+                        "saturday_hours": [],
+                        "sunday_hours": []
                     }
                 };
                 var data = results.data;
@@ -58,7 +66,8 @@ function addNodes() {
                         copy.fields.business = data[i].Business.trim();
                         copy.fields.address = map[data[i].Business].Address.trim();
                         copy.fields.geolocation = geoMap[data[i].Business];
-                        copy.fields.hours = map[data[i].Business].Hours.replace(/[^\x20-\x7E]/gmi, "").trim();
+                        copy.fields.hours_text = map[data[i].Business].Hours.replace(/[^\x20-\x7E]/gmi, "").replace("::", ":").trim();
+                        copy = setHours(copy, map[data[i].Business].Hours.replace(/[^\x20-\x7E]/gmi, "").replace("::", ":").trim());
 
                         if (data[i].Service.trim()) operations.push(copy);
                     } catch (err) {
@@ -72,6 +81,8 @@ function addNodes() {
                     }
                     console.log("service-nodes.json saved");
                 });
+
+
             });
 
         },
@@ -117,5 +128,131 @@ function deleteNodes() {
     });
 }
 
+function uploadDocuments(type) {
+    var file = type == "add" ? "../output/service-nodes.json" : "../output/delete-services.json";
+    var searchHelpers = new AWS.CloudSearchDomain({
+        endpoint: DOCUMENT_DOMAIN
+    });
+
+    var params = {
+        contentType: "application/json",
+        documents: fs.readFileSync(file, 'utf8')
+    };
+
+    searchHelpers.uploadDocuments(params, function (err, data) {
+        if (err) {
+            console.log("Failed to upload Documents: ");
+            console.log(err);
+        } else {
+            console.log("Succesfully uploaded documents from: " + file);
+        }
+    });
+}
+
+// This is a Cloudsearch hack to be able to filter by "open now"
+function setHours(obj, str) {
+    const daysArr = ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"];
+    const dayMap = {
+        "Mon": "monday_hours",
+        "Tue": "tuesday_hours",
+        "Wed": "wednesday_hours",
+        "Thu": "thursday_hours",
+        "Fri": "friday_hours",
+        "Sat": "saturday_hours",
+        "Sun": "sunday_hours"
+    };
+
+    try {
+        var dayIntervals = str.split(",");
+        for (var i = 0; i < dayIntervals.length; i++) {
+            var dayInterval = dayIntervals[i].trim();
+            var daySubstring = dayInterval.substring(0, dayInterval.search(/\d/)).trim();
+            var hoursSubstring = dayInterval.substring(dayInterval.search(/\d/)).trim();
+
+            if (daySubstring.includes("-")) {
+                var firstDay = daySubstring.split("-")[0].trim();
+                var lastDay = daySubstring.split("-")[1].trim();
+
+                for (var j = daysArr.indexOf(firstDay); j <= daysArr.indexOf(lastDay, daysArr.indexOf(firstDay)); j++) {
+                    obj.fields[dayMap[daysArr[j]]] = translateHours(hoursSubstring);
+                }
+            } else {
+                obj.fields[dayMap[daySubstring]] = translateHours(hoursSubstring);
+            }
+        }
+    } catch (err) {
+        console.log("There was a problem translating hours for string: " + str);
+        console.log(err);
+    }
+
+    return obj;
+}
+
+function translateHours(hours) {
+    var translated = [];
+    var firstTime = hours.split("-")[0];
+    var lastTime = hours.split("-")[1];
+
+    firstTime = formatTime(firstTime);
+    lastTime = formatTime(lastTime);
+
+    var currentTime = firstTime;
+
+    while (currentTime != lastTime) {
+        if (currentTime == "24:00") {
+            throw Error("Invalid time range: " + firstTime + "-" + lastTime);
+        }
+        translated.push(currentTime);
+        currentTime = nextTime(currentTime);
+    }
+
+    return translated;
+}
+
+function formatTime(time) {
+    if (time.substring(time.length - 2) != "am" && time.substring(time.length - 2) != "pm") {
+        throw Error("There was a problem with time: " + time);
+    }
+
+    if (time.substring(time.length - 2) == "am") {
+        time = time.substring(0, time.length - 2);
+        if (time.substring(0, 2) == "12") {
+            time = "00" + time.substring(2);
+        }
+    } else {
+        time = time.substring(0, time.length - 2);
+        if (time.substring(0, 2) != "12") {
+            time = (parseInt(time.split(":")[0], 10) + 12).toString() + time.substring(time.indexOf(":"));
+        }
+    }
+
+    if (time.substring(0, time.indexOf(":")).length == 1) {
+        time = "0" + time;
+    }
+
+    return time;
+}
+
+function nextTime(time) {
+    if (time.substring(3) == "00") {
+        time = time.substring(0, 3) + "15";
+    } else if (time.substring(3) == "15") {
+        time = time.substring(0, 3) + "30";
+    } else if (time.substring(3) == "30") {
+        time = time.substring(0, 3) + "45";
+    } else if (time.substring(3) == "45") {
+        time = (parseInt(time.substring(0, 2), 10) + 1).toString() + ":" + "00";
+        if (time.substring(0, time.indexOf(":")).length == 1) {
+            time = "0" + time;
+        }
+    } else {
+        throw Error("Time minutes isn't a multiple of 15: " + time);
+    }
+
+    return time;
+}
+
+
 //deleteNodes();
-addNodes();
+//addNodes();
+uploadDocuments("add");

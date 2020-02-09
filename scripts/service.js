@@ -128,25 +128,32 @@ function deleteNodes() {
     });
 }
 
-function uploadDocuments(type) {
+async function uploadDocuments(type) {
     var file = type == "add" ? "../output/service-nodes.json" : "../output/delete-services.json";
-    var searchHelpers = new AWS.CloudSearchDomain({
+    var csd = new AWS.CloudSearchDomain({
         endpoint: DOCUMENT_DOMAIN
     });
 
-    var params = {
-        contentType: "application/json",
-        documents: fs.readFileSync(file, 'utf8')
-    };
+    var documents = JSON.parse(fs.readFileSync(file, 'utf8'));
+    var i, j, temparray, chunk = 1000, chunkcount = 0;
 
-    searchHelpers.uploadDocuments(params, function (err, data) {
-        if (err) {
-            console.log("Failed to upload Documents: ");
+    for (i = 0, j = documents.length; i < j; i += chunk) {
+        temparray = documents.slice(i, i + chunk);
+        var params = {
+            contentType: "application/json",
+            documents: JSON.stringify(temparray)
+        };
+
+        try {
+            await csd.uploadDocuments(params).promise();
+            console.log("Succesfully uploaded chunk " + chunkcount);
+        } catch (err) {
+            console.log("There was a problem with chunk " + chunkcount);
             console.log(err);
-        } else {
-            console.log("Succesfully uploaded documents from: " + file);
         }
-    });
+
+        chunkcount++;
+    }
 }
 
 // This is a Cloudsearch hack to be able to filter by "open now"
@@ -172,6 +179,9 @@ function setHours(obj, str) {
             if (daySubstring.includes("-")) {
                 var firstDay = daySubstring.split("-")[0].trim();
                 var lastDay = daySubstring.split("-")[1].trim();
+
+                firstDay = formatDay(firstDay);
+                lastDay = formatDay(lastDay);
 
                 for (var j = daysArr.indexOf(firstDay); j <= daysArr.indexOf(lastDay, daysArr.indexOf(firstDay)); j++) {
                     obj.fields[dayMap[daysArr[j]]] = translateHours(hoursSubstring);
@@ -231,6 +241,35 @@ function formatTime(time) {
     }
 
     return time;
+}
+
+function formatDay(day) {
+
+    day = day.toUpperCase();
+
+    if (day == "MO" || day == "MOND" || day == "MON") {
+        return "Mon";
+    }
+    if (day == "TUES" || day == "TU" || day == "TUE") {
+        return "Tue";
+    }
+    if (day == "WEND" || day == "WE" || day == "WEDN" || day == "WEDS" || day == "WED") {
+        return "Wed";
+    }
+    if (day == "THUR" || day == "TH" || day == "THURS" || day == "THU") {
+        return "Thu";
+    }
+    if (day == "FRID" || day == "FR" || day == "FRI") {
+        return "Fri";
+    }
+    if (day == "SATU" || day == "SA" || day == "SAT") {
+        return "Sat";
+    }
+    if (day == "SU" || day == "SUND" || day == "SUN") {
+        return "Sun";
+    }
+
+    console.log("Failed to format day: " + day);
 }
 
 function nextTime(time) {

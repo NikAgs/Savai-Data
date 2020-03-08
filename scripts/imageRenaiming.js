@@ -14,13 +14,23 @@ var allKeys = [];
  */
 listAllKeys(null, async () => {
     for (var i = 0; i < allKeys.length; i++) {
-        var business = allKeys[i].Key.replace("_", "&").replace(".JPG", "").replace(".jpg", "").replace(".png", "").replace(".PNG", "");
+        var business = removeExtentions(allKeys[i].Key);
+        const regex = / [0-9]/;
+        var imageNumber;
+
+        if (regex.test(business.slice(-2))) {
+            imageNumber = business.slice(-1);
+            business = business.substring(0,business.length - 2);
+        } else {
+            console.log("Couldn't parse image number from: " + business);
+            continue;
+        }
 
         for (var j = 0; j < service_nodes.length; j++) {
             if (service_nodes[j].fields.business == business) {
                 try {
-                    await renameImage(allKeys[i].Key, service_nodes[j].fields.business_id + "-1");
-                    console.log("Renamed " + business + " to " + service_nodes[j].fields.business_id + "-1");
+                    await renameImage(allKeys[i].Key, service_nodes[j].fields.business_id + "-" + imageNumber);
+                    console.log("Renamed " + business + " to " + service_nodes[j].fields.business_id + "-" + imageNumber);
                 } catch (err) {
                     console.log("There was a problem with " + business);
                     console.log(err);
@@ -60,4 +70,15 @@ async function renameImage(oldName, newName) {
         Bucket: BUCKET_NAME,
         Key: oldName
     }).promise();
+}
+
+function removeExtentions(imageName) {
+    return imageName
+        .replace("_", "&")
+        .replace(".JPG", "")
+        .replace(".jpg", "")
+        .replace(".png", "")
+        .replace(".PNG", "")
+        .replace(".webp", "")
+        .replace(".WEBP", "");
 }
